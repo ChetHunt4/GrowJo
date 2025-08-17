@@ -1,0 +1,142 @@
+﻿<Window x:Class="GrowJo.ProjectDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GrowJo"
+        mc:Ignorable="d"
+        Title="Project" Height="Auto" Width="Auto" SizeToContent="WidthAndHeight">
+    <StackPanel Orientation="Vertical">
+    <StackPanel Orientation="Horizontal">
+            <StackPanel Orientation="Vertical" x:Name="pnlProject" Visibility="Visible">
+                <StackPanel Orientation="Horizontal">
+                    <Label>Strain Name:</Label>
+                    <TextBox x:Name="txtStrain" MinWidth="200" TextChanged="txtStrain_TextChanged" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Label>Grow Medium:</Label>
+                    <ComboBox x:Name="cmbMedium" SelectionChanged="cmbMedium_SelectionChanged" />
+                    <StackPanel x:Name="pnlMediumOther" Orientation="Horizontal" Visibility="Collapsed">
+                        <Label>Custom Medium:</Label>
+                        <TextBox x:Name="txtOtherMedium" MinWidth="70px" TextChanged="txtOtherMedium_TextChanged" />
+                        <Button x:Name="btnSubmitOtherMedium" Click="btnSubmitOtherMedium_Click" IsEnabled="False">Add Custom Medium</Button>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="btnLoadThumbnail" Click="btnLoadThumbnail_Click">Load Thumbnail Image</Button>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Image x:Name="imgThumbnail" HorizontalAlignment="Center" VerticalAlignment="Bottom" >
+                        <Image.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem x:Name="cmImgThumbnailEdit" Header="Edit Image" Click="cmImgThumbnailEdit_Click" />
+                            </ContextMenu>
+                        </Image.ContextMenu>
+                    </Image>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="Stage:" />
+                    <ComboBox x:Name="cmbEntryStage" SelectionChanged="cmbEntryStage_SelectionChanged" />
+                    <Label Content="Entries:" />
+                    <ComboBox x:Name="cmbEntries" SelectionChanged="cmbEntries_SelectionChanged" />
+                    <Button x:Name="btnNewEntry" Click="btnNewEntry_Click">Create New Entry</Button>
+                </StackPanel>
+            </StackPanel>
+            <StackPanel Orientation="Vertical" x:Name="pnlEntries" Visibility="Collapsed" MaxWidth="800">
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="Entry Date:" />
+                    <DatePicker x:Name="dpDate" SelectedDateChanged="dpDate_SelectedDateChanged" />
+                </StackPanel>
+                <StackPanel Orientation="Vertical">
+                    <ListView x:Name="lvActions">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Background="Black">
+                                    <Label Content="{Binding ActionText}" Foreground="White"/>
+                                    <Button Click="ActionCancelButton_Click" Foreground="White">X</Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                        <ListView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ListView.ItemsPanel>
+                    </ListView>
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="btnAddCustomAction" Click="btnAddCustomAction_Click">Add Custom Action</Button>
+                        <Button x:Name="btnCancelCustomAction" Click="btnCancelCustomAction_Click" IsEnabled="False">Cancel Custom Action</Button>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" x:Name="pnlCustomAction" Visibility="Collapsed">
+                        <Label>Custom Action:</Label>
+                        <TextBox x:Name="txtCustomAction" TextChanged="txtCustomAction_TextChanged" MinWidth="70px" />
+                        <Button x:Name="btnSaveCustomAction" Click="btnSaveCustomAction_Click">Save Custom Action</Button>
+                    </StackPanel>
+                    <ListBox x:Name="lbAvailableActions" />
+                    <Button x:Name="btnAddAction" Click="btnAddAction_Click">Add Selected Action</Button>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="Stage:" />
+                    <ComboBox x:Name="cbStage" SelectionChanged="cbStage_SelectionChanged" />
+                </StackPanel>
+                <StackPanel Orientation="Vertical">
+                    <Label Content="Nutrients:" />
+                    <ListView x:Name="lvNutrients">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Background="Black">
+                                    <Label Content="{Binding NutrientDescription}" Foreground="White"/>
+                                    <Button Click="NutrientCancelButton_Click" Foreground="White">X</Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                        <ListView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" Width="250" />
+                            </ItemsPanelTemplate>
+                        </ListView.ItemsPanel>
+                    </ListView>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox x:Name="txtNumberNutrients" TextChanged="txtNumberNutrients_TextChanged" MinWidth="30px"/>
+                        <ComboBox x:Name="cmbNutrientUnits" SelectionChanged="cmbNutrientUnits_SelectionChanged" />
+                        <TextBox x:Name="txtNutrientName" TextChanged="txtNutrientName_SelectionChanged" MinWidth="30px" />
+                    </StackPanel>
+                    <Button x:Name="btnAddNutrients" Click="btnAddNutrients_Click" IsEnabled="False">Add Nutrients</Button>
+                </StackPanel>
+            </StackPanel>
+
+        <StackPanel Orientation="Vertical" x:Name="pnlEntries2" Visibility="Collapsed" MaxWidth="800">
+            <Label Content="Notes" />
+            <TextBox x:Name="txtNotes" MinHeight="175px" MinWidth="175px" TextWrapping="Wrap" AcceptsReturn="True" MaxWidth="270"/>
+            <Button x:Name="btnAddImages" Click="btnAddImages_Click">Add Images</Button>
+        </StackPanel>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal">
+            <ListView x:Name="lvDailyEntryImageCarousel" SelectionChanged="lvDailyEntryImageCarousel_SelectionChanged">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Image Source="{Binding Thumbnail}" />
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+                <ListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ListView.ItemsPanel>
+                <ListView.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem x:Name="cmLvImageCarouselEdit" Header="Edit Image" Click="cmLvImageCarouselEdit_Click" />
+                        <MenuItem x:Name="cmLvImageCarouselRemove" Header="Remove Image" Click="cmLvImageCarouselRemove_Click" />
+                    </ContextMenu>
+                </ListView.ContextMenu>
+            </ListView>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" x:Name="pnlEntries3" Visibility="Collapsed" MaxWidth="800">
+            <Button x:Name="btnSaveEntry" Click="btnSaveEntry_Click" IsEnabled="False">Save Entry</Button>
+            <Button x:Name="btnCancelEntry" Click="btnCancelEntry_Click">Cancel</Button>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" x:Name="pnlSaveProject">
+            <Button x:Name="btnSaveProject" Click="btnSaveProject_Click" IsEnabled="False">Save Project</Button>
+        </StackPanel>
+    </StackPanel>
+</Window>

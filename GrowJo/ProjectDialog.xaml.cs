@@ -55,12 +55,23 @@ namespace GrowJo
                 ProjectData = new DisplayProjectData();
             }
             txtStrain.Text = ProjectData.StrainName;
+           
             if (!string.IsNullOrWhiteSpace(ProjectData.ProjectThumbnailFilename))
             {
                 ProjectData.LoadThumbnail();
                 imgThumbnail.Source = ProjectData.ProjectThumbnail;
             }
             InitializeProject();
+            if (ProjectData.Medium != null)
+            {
+                cmbMedium.SelectedItem = ProjectData.Medium;
+                if (ProjectData.Medium == GrowMedium.Other)
+                {
+                    txtOtherMedium.Text = ProjectData.CustomMedium;
+                    pnlMediumOther.Visibility = Visibility.Visible;
+
+                }
+            }
 
         }
 
@@ -81,11 +92,6 @@ namespace GrowJo
             lvDailyEntryImageCarousel.ItemsSource = Images;
             var medium = Enum.GetValues(typeof(GrowMedium));
             cmbMedium.ItemsSource = medium;
-            //if (ProjectData != null && ProjectData.Entries != null && ProjectData.Entries.Count > 0)
-            //{
-            //    LoadEntriesList();
-
-            //}
         }
 
         private void LoadEntriesList()
@@ -236,6 +242,14 @@ namespace GrowJo
             {
                 ProjectData.Filename = saveDialog.FileName;
                 ProjectData.StrainName = txtStrain.Text;
+                if (cmbMedium.SelectedItem != null) {
+                    var medium = (GrowMedium)Enum.Parse(typeof(GrowMedium), cmbMedium.SelectedItem.ToString()!);
+                    if (medium == GrowMedium.Other && !string.IsNullOrWhiteSpace(txtOtherMedium.Text))
+                    {
+                        ProjectData.CustomMedium = txtOtherMedium.Text;
+                    }
+                    ProjectData.Medium = medium;
+                }
                 var projectData = (ProjectData)ProjectData;
                 var json = JsonConvert.SerializeObject(projectData);
                 File.WriteAllText(saveDialog.FileName, json);
@@ -276,6 +290,11 @@ namespace GrowJo
                 {
                     LoadEntry(dateTimePick);
                 }
+                btnDeleteEntry.IsEnabled = true;
+            }
+            else
+            {
+                btnDeleteEntry.IsEnabled = false;
             }
         }
 
@@ -558,6 +577,11 @@ namespace GrowJo
                     }
                 }
             
+        }
+
+        private void btnDeleteEntry_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

@@ -40,6 +40,7 @@
                     <Label Content="Entries:" />
                     <ComboBox x:Name="cmbEntries" SelectionChanged="cmbEntries_SelectionChanged" />
                     <Button x:Name="btnNewEntry" Click="btnNewEntry_Click">Create New Entry</Button>
+                    <Button x:Name="btnDeleteEntry" Click="btnDeleteEntry_Click" IsEnabled="False">Delete Selected Entry</Button>
                 </StackPanel>
             </StackPanel>
             <StackPanel Orientation="Vertical" x:Name="pnlEntries" Visibility="Collapsed" MaxWidth="800">

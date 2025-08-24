@@ -70,6 +70,7 @@ namespace GrowJo
             {
                 recents.RecentFiles.Add(e.Filename!);
             }
+            
             var json = JsonConvert.SerializeObject(recents);
             File.WriteAllText($"{AppDomain.CurrentDomain.BaseDirectory}Content\\config.json", json);
             project!.OnProjectSaved -= projectSaved;

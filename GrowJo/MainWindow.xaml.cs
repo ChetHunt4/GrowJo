@@ -21,6 +21,7 @@ namespace GrowJo
     public partial class MainWindow : Window
     {
         private ProjectDialog? project { get; set; }
+        private ImageReceiver? imageReceiver { get; set; }
         private Recents recents { get; set; } = new Recents();
         private List<DisplayProjectData> displayProjects { get; set; } = new List<DisplayProjectData>();
 
@@ -152,6 +153,12 @@ namespace GrowJo
                 project.OnProjectSaved += projectSaved;
                 project.Closed += projectClosed;
             }
+        }
+
+        private void btnImportPhotos_Click(object sender, RoutedEventArgs e)
+        {
+            imageReceiver = new ImageReceiver();
+            imageReceiver.Show();
         }
     }
 }

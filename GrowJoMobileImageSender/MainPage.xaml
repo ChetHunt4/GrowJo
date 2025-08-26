@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="GrowJoMobileImageSender.MainPage">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="30,0"
+            Spacing="25">
+            <Label
+                Text="Status:"
+                FontAttributes="Bold"
+                 />
+            <Label x:Name="lblStatus">No Desktop Found</Label>
+            <Button x:Name="btnDiscover" Clicked="btnDiscover_Clicked" Text="Find GroJo" />
+            <Button x:Name="btnSend" Clicked="btnSend_Clicked" Text="Send" IsEnabled="False" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

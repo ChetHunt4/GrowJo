@@ -29,6 +29,7 @@ namespace GrowJo
         public ObservableCollection<DailyEntrySelectedActions> ActionsList { get; set; } = new ObservableCollection<DailyEntrySelectedActions>();
         public ObservableCollection<ImageData> Images { get; set; } = new ObservableCollection<ImageData>();
         public ObservableCollection<NutrientData> Nutrients { get; set; } = new ObservableCollection<NutrientData>();
+        public ObservableCollection<NutrientData> Terpenes { get; set; } = new ObservableCollection<NutrientData>();
 
         public ImageEditor? ImageEditor { get; set; }
 
@@ -56,12 +57,9 @@ namespace GrowJo
             }
             txtStrain.Text = ProjectData.StrainName;
            
-            if (!string.IsNullOrWhiteSpace(ProjectData.ProjectThumbnailFilename))
-            {
                 ProjectData.LoadThumbnail();
                 imgThumbnail.Source = ProjectData.ProjectThumbnail;
-            }
-            InitializeProject();
+                InitializeProject();
             if (ProjectData.Medium != null)
             {
                 cmbMedium.SelectedItem = ProjectData.Medium;
@@ -71,6 +69,31 @@ namespace GrowJo
                     pnlMediumOther.Visibility = Visibility.Visible;
 
                 }
+            }
+            if (ProjectData.FinalYield != null)
+            {
+                txtYield.Text = ProjectData.FinalYield.ToString();
+            }
+            cmbYieldUnits.SelectedItem = ProjectData.YieldUnits;
+            if (ProjectData.Potency != null)
+            {
+                txtPotency.Text = ProjectData.Potency.ToString();
+            }
+            if (ProjectData.Terpenes != null && ProjectData.Terpenes.Count > 0)
+            {
+                foreach (var terpene in ProjectData.Terpenes)
+                {
+                    Terpenes.Add(new NutrientData
+                    {
+                        Amount = terpene.Amount,
+                        NutrientName = terpene.NutrientName
+                    });
+                }
+
+            }
+            if (!string.IsNullOrWhiteSpace(ProjectData.EffectsDescription))
+            {
+                txtEffectsSummary.Text = ProjectData.EffectsDescription;
             }
 
         }
@@ -87,11 +110,13 @@ namespace GrowJo
             cbStage.ItemsSource = stages;
             var units = Enum.GetValues(typeof(MeasurementUnits));
             cmbNutrientUnits.ItemsSource = units;
+            cmbYieldUnits.ItemsSource = units;
             lvActions.ItemsSource = ActionsList;
             lvNutrients.ItemsSource = Nutrients;
             lvDailyEntryImageCarousel.ItemsSource = Images;
             var medium = Enum.GetValues(typeof(GrowMedium));
             cmbMedium.ItemsSource = medium;
+
         }
 
         private void LoadEntriesList()
@@ -185,7 +210,14 @@ namespace GrowJo
             {
                 return false;
             }
-            return true;
+            else
+            {
+                if (!string.IsNullOrWhiteSpace(ProjectData.Filename))
+                {
+                    btnSaveProjectAs.IsEnabled = true;
+                }
+            }
+                return true;
         }
 
         private bool ValidateCustomAction()
@@ -227,22 +259,19 @@ namespace GrowJo
             pnlEntries3.Visibility = Visibility.Collapsed;
             pnlProject.Visibility = Visibility.Visible;
             pnlSaveProject.Visibility = Visibility.Visible;
-            btnSaveProject.IsEnabled = true;
+            pnlStrainFinalProps.Visibility = Visibility.Visible;
+            btnSaveProjectAs.IsEnabled = true;
             txtStrain.IsEnabled = true;
             btnNewEntry.IsEnabled = true;
         }
 
         private void btnSaveProject_Click(object sender, RoutedEventArgs e)
         {
-            var saveDialog = new SaveFileDialog();
-            saveDialog.Filter = "gjp Files(*.Gjp)| *.Gjp;| All files(*.*) | *.*";
-            saveDialog.DefaultExt = ".gjp";
-            var saveResult = saveDialog.ShowDialog();
-            if (saveResult == true)
+            if (!string.IsNullOrWhiteSpace(ProjectData.Filename))
             {
-                ProjectData.Filename = saveDialog.FileName;
                 ProjectData.StrainName = txtStrain.Text;
-                if (cmbMedium.SelectedItem != null) {
+                if (cmbMedium.SelectedItem != null)
+                {
                     var medium = (GrowMedium)Enum.Parse(typeof(GrowMedium), cmbMedium.SelectedItem.ToString()!);
                     if (medium == GrowMedium.Other && !string.IsNullOrWhiteSpace(txtOtherMedium.Text))
                     {
@@ -250,10 +279,12 @@ namespace GrowJo
                     }
                     ProjectData.Medium = medium;
                 }
+
                 var projectData = (ProjectData)ProjectData;
                 var json = JsonConvert.SerializeObject(projectData);
-                File.WriteAllText(saveDialog.FileName, json);
+                File.WriteAllText(ProjectData.Filename, json);
                 OnProjectSaved?.Invoke(this, projectData);
+                btnSaveProject.IsEnabled = false;
             }
 
         }
@@ -277,7 +308,11 @@ namespace GrowJo
 
         private void txtStrain_TextChanged(object sender, TextChangedEventArgs e)
         {
-            btnSaveProject.IsEnabled = !string.IsNullOrWhiteSpace(txtStrain.Text);
+            btnSaveProjectAs.IsEnabled = !string.IsNullOrWhiteSpace(txtStrain.Text);
+            if (!string.IsNullOrWhiteSpace(ProjectData.Filename))
+            {
+                btnSaveProject.IsEnabled = true;
+            }
         }
 
         private void cmbEntries_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -305,8 +340,9 @@ namespace GrowJo
             pnlEntries3.Visibility = Visibility.Visible;
             pnlProject.Visibility = Visibility.Collapsed;
             pnlSaveProject.Visibility = Visibility.Collapsed;
+            pnlStrainFinalProps.Visibility = Visibility.Collapsed;
             txtStrain.IsEnabled = false;
-            btnSaveProject.IsEnabled = false;
+            btnSaveProjectAs.IsEnabled = false;
             btnNewEntry.IsEnabled = false;
         }
 
@@ -342,6 +378,10 @@ namespace GrowJo
                 cmbEntries.Items.Clear();
             LoadEntriesList();
             ResetEntry();
+            if (!string.IsNullOrWhiteSpace(ProjectData.Filename))
+            {
+                btnSaveProject.IsEnabled = true;
+            }
         }
 
         private void btnCancelEntry_Click(object sender, RoutedEventArgs e)
@@ -499,6 +539,10 @@ namespace GrowJo
                 txtOtherMedium.Text = string.Empty;
                 ProjectData.CustomMedium = null;
             }
+            if (!string.IsNullOrWhiteSpace(ProjectData.Filename))
+            {
+                btnSaveProject.IsEnabled = true;
+            }
         }
 
         private void txtOtherMedium_TextChanged(object sender, TextChangedEventArgs e)
@@ -510,6 +554,10 @@ namespace GrowJo
         {
             ProjectData.CustomMedium = txtOtherMedium.Text;
             ProjectData.Medium = null;
+            if (!string.IsNullOrWhiteSpace(ProjectData.Filename))
+            {
+                btnSaveProject.IsEnabled = true;
+            }
         }
 
         private void cmImgThumbnailEdit_Click(object? sender, RoutedEventArgs e)
@@ -539,6 +587,9 @@ namespace GrowJo
         {
             this.IsEnabled = true;
             ProjectData.LoadThumbnail();
+            if (!string.IsNullOrWhiteSpace(ProjectData.Filename)) {
+                btnSaveProject.IsEnabled = true;
+            }
         }
 
         private void UpdateCarousel(object? sender, EventArgs e)
@@ -581,7 +632,83 @@ namespace GrowJo
 
         private void btnDeleteEntry_Click(object sender, RoutedEventArgs e)
         {
+            var selectedItem = cmbEntries.SelectedItem;
+            DateTime dateTimePick;
+            if (DateTime.TryParse(selectedItem.ToString(), out dateTimePick))
+            {
+                if (ProjectData.Entries != null && ProjectData.Entries.Count > 0 && ProjectData.Entries.ContainsKey(dateTimePick))
+                {
+                    ProjectData.Entries.Remove(dateTimePick);
+                }
+                LoadEntriesList();
+                cmbEntries.SelectedIndex = -1;
+                if (!string.IsNullOrWhiteSpace(ProjectData.Filename))
+                {
+                    btnSaveProject.IsEnabled = true;
+                }
+            }
+        }
 
+        private void txtYield_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+        }
+
+        private void txtPotency_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+        }
+
+        private void btnTerpenesCancel_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void txtTerpenType_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+        }
+
+        private void txtTerpeneAmount_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+        }
+
+        private void btnAddTerpenes_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void cmbYieldUnits_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+
+        private void btnSaveProjectAs_Click(object sender, RoutedEventArgs e)
+        {
+            var saveDialog = new SaveFileDialog();
+            saveDialog.Filter = "gjp Files(*.Gjp)| *.Gjp;| All files(*.*) | *.*";
+            saveDialog.DefaultExt = ".gjp";
+            var saveResult = saveDialog.ShowDialog();
+            if (saveResult == true)
+            {
+                ProjectData.Filename = saveDialog.FileName;
+                ProjectData.StrainName = txtStrain.Text;
+                if (cmbMedium.SelectedItem != null)
+                {
+                    var medium = (GrowMedium)Enum.Parse(typeof(GrowMedium), cmbMedium.SelectedItem.ToString()!);
+                    if (medium == GrowMedium.Other && !string.IsNullOrWhiteSpace(txtOtherMedium.Text))
+                    {
+                        ProjectData.CustomMedium = txtOtherMedium.Text;
+                    }
+                    ProjectData.Medium = medium;
+                }
+                
+                var projectData = (ProjectData)ProjectData;
+                var json = JsonConvert.SerializeObject(projectData);
+                File.WriteAllText(saveDialog.FileName, json);
+                OnProjectSaved?.Invoke(this, projectData);
+            }
         }
     }
 }

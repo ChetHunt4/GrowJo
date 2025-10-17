@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="Project" Height="Auto" Width="Auto" SizeToContent="WidthAndHeight">
     <StackPanel Orientation="Vertical">
-    <StackPanel Orientation="Horizontal">
+        <StackPanel Orientation="Horizontal">
             <StackPanel Orientation="Vertical" x:Name="pnlProject" Visibility="Visible">
                 <StackPanel Orientation="Horizontal">
                     <Label>Strain Name:</Label>
@@ -106,11 +106,11 @@
                 </StackPanel>
             </StackPanel>
 
-        <StackPanel Orientation="Vertical" x:Name="pnlEntries2" Visibility="Collapsed" MaxWidth="800">
-            <Label Content="Notes" />
-            <TextBox x:Name="txtNotes" MinHeight="175px" MinWidth="175px" TextWrapping="Wrap" AcceptsReturn="True" MaxWidth="270"/>
-            <Button x:Name="btnAddImages" Click="btnAddImages_Click">Add Images</Button>
-        </StackPanel>
+            <StackPanel Orientation="Vertical" x:Name="pnlEntries2" Visibility="Collapsed" MaxWidth="800">
+                <Label Content="Notes" />
+                <TextBox x:Name="txtNotes" MinHeight="175px" MinWidth="175px" TextWrapping="Wrap" AcceptsReturn="True" MaxWidth="270"/>
+                <Button x:Name="btnAddImages" Click="btnAddImages_Click">Add Images</Button>
+            </StackPanel>
         </StackPanel>
         <StackPanel Orientation="Horizontal">
             <ListView x:Name="lvDailyEntryImageCarousel" SelectionChanged="lvDailyEntryImageCarousel_SelectionChanged">
@@ -132,12 +132,51 @@
                 </ListView.ContextMenu>
             </ListView>
         </StackPanel>
+        <StackPanel Orientation="Vertical" x:Name="pnlStrainFinalProps">
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Yield: " />
+                <TextBox x:Name="txtYield" MinWidth="70px" MaxWidth="270" TextChanged="txtYield_TextChanged" />
+                <ComboBox x:Name="cmbYieldUnits" MinWidth="70px" SelectionChanged="cmbYieldUnits_SelectionChanged" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Potency: "/>
+                <TextBox x:Name="txtPotency" MinWidth="175px" MaxWidth="270" TextChanged="txtPotency_TextChanged" />
+            </StackPanel>
+            <StackPanel Orientation="Vertical">
+                <Label Content="Terpenes:" />
+                <ListView x:Name="lvTerpenes">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Background="Black">
+                                <Label Content="{Binding TerpeneDescription}" Foreground="White"/>
+                                <Button Click="btnTerpenesCancel_Click" Foreground="White">X</Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                    <ListView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" Width="250" />
+                        </ItemsPanelTemplate>
+                    </ListView.ItemsPanel>
+                </ListView>
+                <StackPanel Orientation="Horizontal">
+                    <TextBox x:Name="txtTerpenType" TextChanged="txtTerpenType_TextChanged" MinWidth="30px"/>
+                    <TextBox x:Name="txtTerpeneAmount" TextChanged="txtTerpeneAmount_TextChanged" MinWidth="30px" />
+                </StackPanel>
+                <Button x:Name="btnAddTerpenes" Click="btnAddTerpenes_Click" IsEnabled="False">Add Terpene</Button>
+            </StackPanel>
+            <StackPanel Orientation="Vertical">
+                <Label Content="Effects Summary: " />
+                <TextBox x:Name="txtEffectsSummary" MinHeight="175px" MinWidth="175px" TextWrapping="Wrap" AcceptsReturn="True" MaxWidth="270"/>
+            </StackPanel>
+        </StackPanel>
         <StackPanel Orientation="Horizontal" x:Name="pnlEntries3" Visibility="Collapsed" MaxWidth="800">
             <Button x:Name="btnSaveEntry" Click="btnSaveEntry_Click" IsEnabled="False">Save Entry</Button>
             <Button x:Name="btnCancelEntry" Click="btnCancelEntry_Click">Cancel</Button>
         </StackPanel>
         <StackPanel Orientation="Horizontal" x:Name="pnlSaveProject">
             <Button x:Name="btnSaveProject" Click="btnSaveProject_Click" IsEnabled="False">Save Project</Button>
+            <Button x:Name="btnSaveProjectAs" Click="btnSaveProjectAs_Click" IsEnabled="False">Save Project As...</Button>
         </StackPanel>
     </StackPanel>
 </Window>

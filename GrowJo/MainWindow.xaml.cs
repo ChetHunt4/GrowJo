@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using Newtonsoft.Json;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -23,7 +24,7 @@ namespace GrowJo
         private ProjectDialog? project { get; set; }
         private ImageReceiver? imageReceiver { get; set; }
         private Recents recents { get; set; } = new Recents();
-        private List<DisplayProjectData> displayProjects { get; set; } = new List<DisplayProjectData>();
+        private ObservableCollection<DisplayProjectData> displayProjects { get; set; } = new ObservableCollection<DisplayProjectData>();
 
         public MainWindow()
         {
@@ -105,6 +106,7 @@ namespace GrowJo
         {
             if (recents.RecentFiles != null && recents.RecentFiles.Count > 0)
             {
+                displayProjects.Clear();
                 List<int> indicesToRemove = new List<int>();
                 foreach (var recent in recents.RecentFiles)
                 {

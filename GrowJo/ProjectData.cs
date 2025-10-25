@@ -29,7 +29,9 @@ namespace GrowJo
             FinalYield = source.FinalYield;
             Potency = source.Potency;
             Terpenes = source.Terpenes;
+            EffectsDescription = source.EffectsDescription;
             Filename = source.Filename;
+            YieldUnits = source.YieldUnits;
         }
 
         public void LoadThumbnail()
@@ -56,8 +58,10 @@ namespace GrowJo
         public string? ProjectThumbnailFilename { get; set; }
         public Dictionary<DateTime, DailyEntry>? Entries { get; set; }
         public float? FinalYield { get; set; }
+        public MeasurementUnits YieldUnits { get; set; }
         public float? Potency { get; set; }
-        public Dictionary<string, float>? Terpenes { get; set; }
+        public List<NutrientData>? Terpenes { get; set; }
+        public string? EffectsDescription { get; set; }
         public string? Filename { get; set; }
     }
 
@@ -122,6 +126,11 @@ namespace GrowJo
         public string NutrientDescription { get
             {
                 return $"{Amount} {Unit.ToString()} {NutrientName}";
+            } 
+        }
+        public string TerpeneDescription { get
+            {
+                return $"{Amount} {NutrientName}";
             } }
     }
 
@@ -214,11 +223,12 @@ namespace GrowJo
         Tsp,
         Tbsp,
         Cup,
-        Milligram,
+        Milliliters,
         Gram,
         Ounce,
         Pound,
-        Kilo
+        Kilo,
+        Milligram
     }
 
     public enum GrowMedium

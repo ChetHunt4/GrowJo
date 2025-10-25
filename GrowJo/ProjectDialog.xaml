@@ -135,12 +135,12 @@
         <StackPanel Orientation="Vertical" x:Name="pnlStrainFinalProps">
             <StackPanel Orientation="Horizontal">
                 <Label Content="Yield: " />
-                <TextBox x:Name="txtYield" MinWidth="70px" MaxWidth="270" TextChanged="txtYield_TextChanged" />
-                <ComboBox x:Name="cmbYieldUnits" MinWidth="70px" SelectionChanged="cmbYieldUnits_SelectionChanged" />
+                <TextBox x:Name="txtYield" MinWidth="70px" MaxWidth="270" />
+                <ComboBox x:Name="cmbYieldUnits" MinWidth="70px" />
             </StackPanel>
             <StackPanel Orientation="Horizontal">
                 <Label Content="Potency: "/>
-                <TextBox x:Name="txtPotency" MinWidth="175px" MaxWidth="270" TextChanged="txtPotency_TextChanged" />
+                <TextBox x:Name="txtPotency" MinWidth="175px" MaxWidth="270" />
             </StackPanel>
             <StackPanel Orientation="Vertical">
                 <Label Content="Terpenes:" />

@@ -151,6 +151,7 @@ namespace GrowJo
                 pnlEntries3.Visibility = Visibility.Visible;
                 pnlProject.Visibility = Visibility.Collapsed;
                 pnlSaveProject.Visibility = Visibility.Collapsed;
+                pnlStrainFinalProps.Visibility = Visibility.Collapsed;
                 ActionsList.Clear();
                 dpDate.SelectedDate = date;
                 if (entry.Actions != null && entry.Actions.Count > 0)
@@ -204,6 +205,49 @@ namespace GrowJo
             }
         }
 
+
+        private void SaveProject(string fileName)
+        {
+            if (!string.IsNullOrWhiteSpace(fileName))
+            {
+                ProjectData.StrainName = txtStrain.Text;
+                ProjectData.Filename = fileName;
+                if (cmbMedium.SelectedItem != null)
+                {
+                    var medium = (GrowMedium)Enum.Parse(typeof(GrowMedium), cmbMedium.SelectedItem.ToString()!);
+                    if (medium == GrowMedium.Other && !string.IsNullOrWhiteSpace(txtOtherMedium.Text))
+                    {
+                        ProjectData.CustomMedium = txtOtherMedium.Text;
+                    }
+                    ProjectData.Medium = medium;
+                }
+                if (ValidateYield())
+                {
+                    float amount = float.Parse(txtYield.Text);
+                    ProjectData.FinalYield = amount;
+                    var yieldUnits = (MeasurementUnits)Enum.Parse(typeof(MeasurementUnits), cmbYieldUnits.SelectedItem.ToString()!);
+                    ProjectData.YieldUnits = yieldUnits;
+                }
+                if (ValidatePotency())
+                {
+                    float potency = float.Parse(txtPotency.Text);
+                    ProjectData.Potency = potency;
+                }
+                if (!string.IsNullOrWhiteSpace(txtEffectsSummary.Text))
+                {
+                    ProjectData.EffectsDescription = txtEffectsSummary.Text;
+                }
+                
+
+
+                var projectData = (ProjectData)ProjectData;
+                var json = JsonConvert.SerializeObject(projectData);
+                File.WriteAllText(fileName, json);
+                OnProjectSaved?.Invoke(this, projectData);
+                btnSaveProject.IsEnabled = false;
+            }
+        }
+
         private bool ValidateEntry()
         {
             if (!dpDate.SelectedDate.HasValue || cbStage.SelectedIndex < 0)
@@ -247,6 +291,38 @@ namespace GrowJo
             return true;
         }
 
+        private bool ValidateYield()
+        {
+            if (string.IsNullOrWhiteSpace(txtYield.Text) || cmbYieldUnits.SelectedIndex < 0)
+            {
+                return false;
+            }
+            if (!float.TryParse(txtYield.Text, out _))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool ValidatePotency()
+        {
+            if (string.IsNullOrWhiteSpace(txtPotency.Text))
+            {
+                return false;
+            }
+            if (!float.TryParse(txtPotency.Text, out _))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        private bool ValidateAddTerpenes()
+        {
+            return true;
+        }
+
         private void ResetEntry()
         {
             ActionsList.Clear();
@@ -265,28 +341,10 @@ namespace GrowJo
             btnNewEntry.IsEnabled = true;
         }
 
+
         private void btnSaveProject_Click(object sender, RoutedEventArgs e)
         {
-            if (!string.IsNullOrWhiteSpace(ProjectData.Filename))
-            {
-                ProjectData.StrainName = txtStrain.Text;
-                if (cmbMedium.SelectedItem != null)
-                {
-                    var medium = (GrowMedium)Enum.Parse(typeof(GrowMedium), cmbMedium.SelectedItem.ToString()!);
-                    if (medium == GrowMedium.Other && !string.IsNullOrWhiteSpace(txtOtherMedium.Text))
-                    {
-                        ProjectData.CustomMedium = txtOtherMedium.Text;
-                    }
-                    ProjectData.Medium = medium;
-                }
-
-                var projectData = (ProjectData)ProjectData;
-                var json = JsonConvert.SerializeObject(projectData);
-                File.WriteAllText(ProjectData.Filename, json);
-                OnProjectSaved?.Invoke(this, projectData);
-                btnSaveProject.IsEnabled = false;
-            }
-
+            SaveProject(ProjectData.Filename!);
         }
 
         private void btnLoadThumbnail_Click(object sender, RoutedEventArgs e)
@@ -404,7 +462,6 @@ namespace GrowJo
                 {
                     ActionsList.Add(newSelectedAction);
                 }
-                //lvActions.ItemsSource = DailySelectedActions;
             }
         }
 
@@ -649,39 +706,41 @@ namespace GrowJo
             }
         }
 
-        private void txtYield_TextChanged(object sender, TextChangedEventArgs e)
-        {
-
-        }
-
-        private void txtPotency_TextChanged(object sender, TextChangedEventArgs e)
-        {
-
-        }
-
         private void btnTerpenesCancel_Click(object sender, RoutedEventArgs e)
         {
-
+            Button? button = sender as Button;
+            var context = button!.DataContext as NutrientData;
+            if (context != null)
+            {
+                Terpenes.Remove(context);
+            }
         }
 
         private void txtTerpenType_TextChanged(object sender, TextChangedEventArgs e)
         {
-
+            btnAddTerpenes.IsEnabled = ValidateAddTerpenes();
         }
 
         private void txtTerpeneAmount_TextChanged(object sender, TextChangedEventArgs e)
         {
-
+            btnAddTerpenes.IsEnabled = ValidateAddTerpenes();
         }
 
         private void btnAddTerpenes_Click(object sender, RoutedEventArgs e)
         {
+            float amount = float.Parse(txtTerpeneAmount.Text);
+            //MeasurementUnits units = (MeasurementUnits)Enum.Parse(typeof(MeasurementUnits), cmbNutrientUnits.SelectedItem.ToString()!, true);
 
-        }
+            NutrientData terpene = new NutrientData
+            {
+                Amount = amount,
+                NutrientName = txtTerpenType.Text,
+                Unit = MeasurementUnits.Tsp
+            };
 
-        private void cmbYieldUnits_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
+            Terpenes.Add(terpene);
+            txtTerpeneAmount.Text = string.Empty;
+            txtTerpenType.Text = string.Empty;
         }
 
         private void btnSaveProjectAs_Click(object sender, RoutedEventArgs e)
@@ -692,22 +751,7 @@ namespace GrowJo
             var saveResult = saveDialog.ShowDialog();
             if (saveResult == true)
             {
-                ProjectData.Filename = saveDialog.FileName;
-                ProjectData.StrainName = txtStrain.Text;
-                if (cmbMedium.SelectedItem != null)
-                {
-                    var medium = (GrowMedium)Enum.Parse(typeof(GrowMedium), cmbMedium.SelectedItem.ToString()!);
-                    if (medium == GrowMedium.Other && !string.IsNullOrWhiteSpace(txtOtherMedium.Text))
-                    {
-                        ProjectData.CustomMedium = txtOtherMedium.Text;
-                    }
-                    ProjectData.Medium = medium;
-                }
-                
-                var projectData = (ProjectData)ProjectData;
-                var json = JsonConvert.SerializeObject(projectData);
-                File.WriteAllText(saveDialog.FileName, json);
-                OnProjectSaved?.Invoke(this, projectData);
+                SaveProject(saveDialog.FileName);
             }
         }
     }

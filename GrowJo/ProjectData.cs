@@ -31,6 +31,7 @@ namespace GrowJo
             Terpenes = source.Terpenes;
             EffectsDescription = source.EffectsDescription;
             Filename = source.Filename;
+            YieldUnits = source.YieldUnits;
         }
 
         public void LoadThumbnail()

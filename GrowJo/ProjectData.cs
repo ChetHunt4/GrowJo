@@ -203,6 +203,7 @@ namespace GrowJo
         Seedling,
         Veg,
         Flower,
+        Harvest,
         Drying,
         Curing,
         Done

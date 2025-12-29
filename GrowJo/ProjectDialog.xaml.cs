@@ -1,10 +1,12 @@
 ﻿using GrowJo.Helpers;
+using GrowJo.Utilities;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -381,12 +383,14 @@ namespace GrowJo
                 DateTime dateTimePick;
                 if (DateTime.TryParse(selectedItem.ToString(), out dateTimePick))
                 {
-                    LoadEntry(dateTimePick);
+                    //LoadEntry(dateTimePick);
+                    btnLoadEntry.IsEnabled = true;
+                    btnDeleteEntry.IsEnabled = true;
                 }
-                btnDeleteEntry.IsEnabled = true;
             }
             else
             {
+                btnLoadEntry.IsEnabled = false;
                 btnDeleteEntry.IsEnabled = false;
             }
         }
@@ -671,19 +675,41 @@ namespace GrowJo
         {
 
             Stage stage = (Stage)Enum.Parse(typeof(Stage), cmbEntryStage.SelectedItem.ToString()!, true);
+            var nextStage = stage.Next();
 
                 var stagedEntries = ProjectData.Entries!.Values.Where(w => w.State == stage).ToList();
+            var nextStageFirstEntry = ProjectData.Entries!.Values.Where(w => w.State == nextStage).FirstOrDefault();
             cmbEntries.Items.Clear();
-                if (stagedEntries.Count > 0)
+            if (stagedEntries.Count > 0)
+            {
+
+
+                pnlStageLengthInfo.Visibility = Visibility.Visible;
+                var keys = new List<DateTime>();
+                foreach (var entry in ProjectData.Entries)
                 {
-                    foreach (var entry in ProjectData.Entries)
+                    if (entry.Value.State == stage)
                     {
-                        if (entry.Value.State == stage)
-                        {
-                            cmbEntries.Items.Add(entry.Key);
-                        }
+                        cmbEntries.Items.Add(entry.Key);
+                        keys.Add(entry.Key);
+                    }
+                    else if (entry.Value.State == nextStage)
+                    {
+                        keys.Add(entry.Key);
+                        break;
                     }
                 }
+                var firstDate = keys.Min();
+                var lastDate = keys.Max();
+                var days = (lastDate - firstDate).Days;
+                var weeks = (lastDate - firstDate).Days / 7;
+                lblStageDays.Content = days;
+                lblStageWeeks.Content = weeks;
+            }
+            else
+            {
+                pnlStageLengthInfo.Visibility = Visibility.Collapsed;
+            }
             
         }
 
@@ -705,7 +731,7 @@ namespace GrowJo
                 }
             }
         }
-
+        
         private void btnTerpenesCancel_Click(object sender, RoutedEventArgs e)
         {
             Button? button = sender as Button;
@@ -752,6 +778,26 @@ namespace GrowJo
             if (saveResult == true)
             {
                 SaveProject(saveDialog.FileName);
+            }
+        }
+
+        private void btnLoadEntry_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedItem = cmbEntries.SelectedItem;
+            var dateTime = DateTime.Parse(selectedItem.ToString()!);
+            LoadEntry(dateTime);
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            if (pnlEntries.Visibility == Visibility.Visible)
+            {
+                e.Cancel = true;
+                ResetEntry();
+            }
+            else
+            {
+                base.OnClosing(e);
             }
         }
     }

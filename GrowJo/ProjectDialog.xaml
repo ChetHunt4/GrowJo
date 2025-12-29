@@ -34,13 +34,27 @@
                         </Image.ContextMenu>
                     </Image>
                 </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0, 0, 4, 4">
+                    <Border BorderBrush="DarkGreen" BorderThickness="2" CornerRadius="8">
+                        <Button x:Name="btnNewEntry" Click="btnNewEntry_Click" Background="Green" Foreground="White" Padding="4">
+                            Create New Entry
+                        </Button>
+                    </Border>
+                </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <Label Content="Stage:" />
                     <ComboBox x:Name="cmbEntryStage" SelectionChanged="cmbEntryStage_SelectionChanged" />
                     <Label Content="Entries:" />
                     <ComboBox x:Name="cmbEntries" SelectionChanged="cmbEntries_SelectionChanged" />
-                    <Button x:Name="btnNewEntry" Click="btnNewEntry_Click">Create New Entry</Button>
-                    <Button x:Name="btnDeleteEntry" Click="btnDeleteEntry_Click" IsEnabled="False">Delete Selected Entry</Button>
+                    <Button x:Name="btnLoadEntry" Click="btnLoadEntry_Click" IsEnabled="False">Load Entry</Button>
+
+                    <Button x:Name="btnDeleteEntry" Click="btnDeleteEntry_Click" IsEnabled="False">Delete Entry</Button>
+                </StackPanel>
+                <StackPanel x:Name="pnlStageLengthInfo" Orientation="Horizontal" Visibility="Collapsed">
+                    <Label Content="Total Days: " />
+                    <Label x:Name="lblStageDays" />
+                    <Label Content="Total Weeks: " />
+                    <Label x:Name="lblStageWeeks" />
                 </StackPanel>
             </StackPanel>
             <StackPanel Orientation="Vertical" x:Name="pnlEntries" Visibility="Collapsed" MaxWidth="800">

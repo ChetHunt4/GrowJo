@@ -59,6 +59,16 @@ namespace GrowJo
                 }
                 var json = JsonConvert.SerializeObject(recents);
                 File.WriteAllText($"{AppDomain.CurrentDomain.BaseDirectory}Content\\config.json", json);
+
+                if (project != null && project.ShowActivated)
+                {
+                    project.OnProjectSaved -= projectSaved;
+                }
+
+                project = new ProjectDialog(openDialog!.FileName!);
+                project.Show();
+                project.OnProjectSaved += projectSaved;
+                project.Closed += projectClosed;
             }
         }
 
@@ -114,9 +124,14 @@ namespace GrowJo
                     {
                         var json = File.ReadAllText(recent);
                         var projectData = JsonConvert.DeserializeObject<ProjectData>(json);
-                        var displayProjectData = new DisplayProjectData(projectData!);
-                        displayProjectData!.LoadThumbnail();
-                        displayProjects.Add(displayProjectData);
+                        if (projectData != null && projectData.Entries != null && projectData.Entries.Count > 0 && !projectData.Entries.Any(a => a.Value.State == Stage.Done))
+                        {
+                            var displayProjectData = new DisplayProjectData(projectData!);
+
+                            displayProjectData!.LoadThumbnail();
+                            displayProjects.Add(displayProjectData);
+                        }
+                        
                     }
                     else
                     {

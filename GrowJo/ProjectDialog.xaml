@@ -14,6 +14,16 @@
                     <TextBox x:Name="txtStrain" MinWidth="200" TextChanged="txtStrain_TextChanged" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
+                    <Label>Genetics:</Label>
+                    <TextBox x:Name="txtCross1" MinWidth="150" TextChanged="txtCross1_TextChanged" />
+                    <Label Content=" x " />
+                    <TextBox x:Name="txtCross2" MinWidth="150" TextChanged="txtCross2_TextChanged" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Label>Breeder</Label>
+                    <TextBox x:Name="txtBreeder" MinWidth="200" TextChanged="txtBreeder_TextChanged" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
                     <Label>Grow Medium:</Label>
                     <ComboBox x:Name="cmbMedium" SelectionChanged="cmbMedium_SelectionChanged" />
                     <StackPanel x:Name="pnlMediumOther" Orientation="Horizontal" Visibility="Collapsed">
@@ -35,11 +45,9 @@
                     </Image>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0, 0, 4, 4">
-                    <Border BorderBrush="DarkGreen" BorderThickness="2" CornerRadius="8">
-                        <Button x:Name="btnNewEntry" Click="btnNewEntry_Click" Background="Green" Foreground="White" Padding="4">
-                            Create New Entry
-                        </Button>
-                    </Border>
+                    <Button x:Name="btnNewEntry" Click="btnNewEntry_Click" Background="Green" Foreground="White" Padding="4">
+                        Create New Entry
+                    </Button>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <Label Content="Stage:" />
@@ -51,10 +59,7 @@
                     <Button x:Name="btnDeleteEntry" Click="btnDeleteEntry_Click" IsEnabled="False">Delete Entry</Button>
                 </StackPanel>
                 <StackPanel x:Name="pnlStageLengthInfo" Orientation="Horizontal" Visibility="Collapsed">
-                    <Label Content="Total Days: " />
-                    <Label x:Name="lblStageDays" />
-                    <Label Content="Total Weeks: " />
-                    <Label x:Name="lblStageWeeks" />
+                    <Label x:Name="lblDaysAndWeeks" Content="Days: 0 - Weeks: 0" />
                 </StackPanel>
             </StackPanel>
             <StackPanel Orientation="Vertical" x:Name="pnlEntries" Visibility="Collapsed" MaxWidth="800">
@@ -115,6 +120,7 @@
                         <TextBox x:Name="txtNumberNutrients" TextChanged="txtNumberNutrients_TextChanged" MinWidth="30px"/>
                         <ComboBox x:Name="cmbNutrientUnits" SelectionChanged="cmbNutrientUnits_SelectionChanged" />
                         <TextBox x:Name="txtNutrientName" TextChanged="txtNutrientName_SelectionChanged" MinWidth="30px" />
+                        <CheckBox x:Name="chkSameAsLastTime" Content="Same as last time" Checked="chkSameAsLastTime_Checked" />
                     </StackPanel>
                     <Button x:Name="btnAddNutrients" Click="btnAddNutrients_Click" IsEnabled="False">Add Nutrients</Button>
                 </StackPanel>
@@ -124,6 +130,7 @@
                 <Label Content="Notes" />
                 <TextBox x:Name="txtNotes" MinHeight="175px" MinWidth="175px" TextWrapping="Wrap" AcceptsReturn="True" MaxWidth="270"/>
                 <Button x:Name="btnAddImages" Click="btnAddImages_Click">Add Images</Button>
+                <Label x:Name="lblTime" />
             </StackPanel>
         </StackPanel>
         <StackPanel Orientation="Horizontal">

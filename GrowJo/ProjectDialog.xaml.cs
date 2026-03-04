@@ -32,7 +32,7 @@ namespace GrowJo
         public ObservableCollection<ImageData> Images { get; set; } = new ObservableCollection<ImageData>();
         public ObservableCollection<NutrientData> Nutrients { get; set; } = new ObservableCollection<NutrientData>();
         public ObservableCollection<NutrientData> Terpenes { get; set; } = new ObservableCollection<NutrientData>();
-
+        
         public ImageEditor? ImageEditor { get; set; }
 
         public event EventHandler<ProjectData>? OnProjectSaved;
@@ -58,10 +58,10 @@ namespace GrowJo
                 ProjectData = new DisplayProjectData();
             }
             txtStrain.Text = ProjectData.StrainName;
-           
-                ProjectData.LoadThumbnail();
-                imgThumbnail.Source = ProjectData.ProjectThumbnail;
-                InitializeProject();
+
+            ProjectData.LoadThumbnail();
+            imgThumbnail.Source = ProjectData.ProjectThumbnail;
+            InitializeProject();
             if (ProjectData.Medium != null)
             {
                 cmbMedium.SelectedItem = ProjectData.Medium;
@@ -96,6 +96,15 @@ namespace GrowJo
             if (!string.IsNullOrWhiteSpace(ProjectData.EffectsDescription))
             {
                 txtEffectsSummary.Text = ProjectData.EffectsDescription;
+            }
+            if (!string.IsNullOrWhiteSpace(ProjectData.Breeder))
+            {
+                txtBreeder.Text = ProjectData.Breeder;
+            }
+            if (!string.IsNullOrWhiteSpace(ProjectData.Cross1) && !string.IsNullOrWhiteSpace(ProjectData.Cross2))
+            {
+                txtCross1.Text = ProjectData.Cross1;
+                txtCross2.Text = ProjectData.Cross2;
             }
 
         }
@@ -204,6 +213,8 @@ namespace GrowJo
                         }
                     }
                 }
+                lblTime.Content = GetDaysAndWeeksInStage(date, entry.State);
+
             }
         }
 
@@ -239,7 +250,15 @@ namespace GrowJo
                 {
                     ProjectData.EffectsDescription = txtEffectsSummary.Text;
                 }
-                
+                if (!string.IsNullOrWhiteSpace(txtBreeder.Text))
+                {
+                    ProjectData.Breeder = txtBreeder.Text;
+                }
+                if (ValidateGenetics())
+                {
+                    ProjectData.Cross1 = txtCross1.Text;
+                    ProjectData.Cross2 = txtCross2.Text;
+                }
 
 
                 var projectData = (ProjectData)ProjectData;
@@ -247,6 +266,40 @@ namespace GrowJo
                 File.WriteAllText(fileName, json);
                 OnProjectSaved?.Invoke(this, projectData);
                 btnSaveProject.IsEnabled = false;
+            }
+        }
+
+        private string GetDaysAndWeeksInStage(DateTime currentDate, Stage currentStage)
+        {
+            //Stage stage = (Stage)Enum.Parse(typeof(Stage), cmbEntryStage.SelectedItem.ToString()!, true);
+            var nextStage = currentStage.Next();
+            var stagedEntries = ProjectData.Entries!.Values.Where(w => w.State == currentStage).ToList();
+            //var nextStageFirstEntry = ProjectData.Entries!.Values.Where(w => w.State == nextStage).FirstOrDefault();
+            var keys = new List<DateTime>();
+            if (stagedEntries.Any())
+            {
+                foreach (var entry in ProjectData.Entries!)
+                {
+                    if (entry.Value.State == currentStage)
+                    {
+                        cmbEntries.Items.Add(entry.Key);
+                        keys.Add(entry.Key);
+                    }
+                    else if (entry.Value.State == nextStage)
+                    {
+                        keys.Add(entry.Key);
+                        break;
+                    }
+                }
+                var firstDate = keys.Min();
+                var lastDate = currentDate;
+                var days = (lastDate - firstDate).Days;
+                var weeks = (lastDate - firstDate).Days / 7;
+                return $"Days: {days} - Weeks: {weeks}";
+            }
+            else
+            {
+                return $"Days: 0 - Weeks: 0";
             }
         }
 
@@ -261,6 +314,8 @@ namespace GrowJo
                 if (!string.IsNullOrWhiteSpace(ProjectData.Filename))
                 {
                     btnSaveProjectAs.IsEnabled = true;
+                    var stage = (Stage)Enum.Parse(typeof(Stage), cbStage.SelectedItem.ToString()!, true);
+                    lblTime.Content = GetDaysAndWeeksInStage(dpDate.SelectedDate.Value, stage);
                 }
             }
                 return true;
@@ -273,6 +328,14 @@ namespace GrowJo
 
         private bool ValidateNutrients()
         {
+            if (chkSameAsLastTime.IsChecked == true && 
+                Nutrients.Count == 0 && 
+                dpDate.SelectedDate.HasValue && 
+                ProjectData != null && ProjectData.Entries != null && 
+                ProjectData.Entries.Keys.Any(a => a < dpDate.SelectedDate))
+            {
+                return true;
+            }
             if (string.IsNullOrWhiteSpace(txtNumberNutrients.Text) || (string.IsNullOrWhiteSpace(txtNutrientName.Text)))
             {
                 return false;
@@ -323,6 +386,14 @@ namespace GrowJo
         private bool ValidateAddTerpenes()
         {
             return true;
+        }
+        private bool ValidateGenetics()
+        {
+            if (!string.IsNullOrWhiteSpace(txtCross1.Text) && !string.IsNullOrWhiteSpace(txtCross2.Text))
+            {
+                return true;
+            }
+            return false;
         }
 
         private void ResetEntry()
@@ -486,6 +557,11 @@ namespace GrowJo
             if (context != null)
             {
                 Nutrients.Remove(context);
+                if (Nutrients.Count <= 0)
+                {
+                    chkSameAsLastTime.IsChecked = false;
+                    chkSameAsLastTime.IsEnabled = true;
+                }
             }
         }
 
@@ -573,19 +649,38 @@ namespace GrowJo
 
         private void btnAddNutrients_Click(object sender, RoutedEventArgs e)
         {
-            float amount = float.Parse(txtNumberNutrients.Text);
-            MeasurementUnits units = (MeasurementUnits)Enum.Parse(typeof(MeasurementUnits), cmbNutrientUnits.SelectedItem.ToString()!, true);
+            if (chkSameAsLastTime.IsChecked == true && chkSameAsLastTime.IsEnabled == true)
+            {
+                var selectedKey = ProjectData.Entries!.Keys.Where(w => w < dpDate.SelectedDate).OrderByDescending(o => o).FirstOrDefault();
+                var selectedEntry = ProjectData.Entries![selectedKey];
+                if (selectedEntry.NutrientData != null && selectedEntry.NutrientData.Count > 0)
+                {
+                    foreach (var nutrient in selectedEntry.NutrientData)
+                    {
+                        Nutrients.Add(nutrient);
 
-            NutrientData nutrient = new NutrientData { 
-                Amount = amount,
-                NutrientName = txtNutrientName.Text,
-                Unit = units
-            };
+                    }
+                }
+            }
+            else
+            {
+                float amount = float.Parse(txtNumberNutrients.Text);
+                MeasurementUnits units = (MeasurementUnits)Enum.Parse(typeof(MeasurementUnits), cmbNutrientUnits.SelectedItem.ToString()!, true);
 
-            Nutrients.Add(nutrient);
+                NutrientData nutrient = new NutrientData
+                {
+                    Amount = amount,
+                    NutrientName = txtNutrientName.Text,
+                    Unit = units
+                };
+
+                Nutrients.Add(nutrient);
+
+            }
             txtNutrientName.Text = string.Empty;
             txtNumberNutrients.Text = string.Empty;
             cmbNutrientUnits.SelectedItem = null;
+            chkSameAsLastTime.IsEnabled = false;
         }
 
         private void cmbMedium_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -641,6 +736,9 @@ namespace GrowJo
 
         private void cmLvImageCarouselRemove_Click(object sender, RoutedEventArgs e)
         {
+            var index = lvDailyEntryImageCarousel.SelectedIndex;
+            Images.RemoveAt(index);
+            UpdateCarousel(this, new EventArgs());
 
         }
 
@@ -673,42 +771,47 @@ namespace GrowJo
 
         private void cmbEntryStage_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-
-            Stage stage = (Stage)Enum.Parse(typeof(Stage), cmbEntryStage.SelectedItem.ToString()!, true);
-            var nextStage = stage.Next();
-
-                var stagedEntries = ProjectData.Entries!.Values.Where(w => w.State == stage).ToList();
-            var nextStageFirstEntry = ProjectData.Entries!.Values.Where(w => w.State == nextStage).FirstOrDefault();
-            cmbEntries.Items.Clear();
-            if (stagedEntries.Count > 0)
+            if (ProjectData.Entries != null && ProjectData.Entries.Count > 0)
             {
+                Stage stage = (Stage)Enum.Parse(typeof(Stage), cmbEntryStage.SelectedItem.ToString()!, true);
+                //var nextStage = stage.Next();
+
+                //var stagedEntries = ProjectData.Entries!.Values.Where(w => w.State == stage).ToList();
+                //var nextStageFirstEntry = ProjectData.Entries!.Values.Where(w => w.State == nextStage).FirstOrDefault();
+                cmbEntries.Items.Clear();
+                //if (stagedEntries.Count > 0)
+                //{
 
 
-                pnlStageLengthInfo.Visibility = Visibility.Visible;
-                var keys = new List<DateTime>();
-                foreach (var entry in ProjectData.Entries)
-                {
-                    if (entry.Value.State == stage)
-                    {
-                        cmbEntries.Items.Add(entry.Key);
-                        keys.Add(entry.Key);
-                    }
-                    else if (entry.Value.State == nextStage)
-                    {
-                        keys.Add(entry.Key);
-                        break;
-                    }
-                }
-                var firstDate = keys.Min();
-                var lastDate = keys.Max();
-                var days = (lastDate - firstDate).Days;
-                var weeks = (lastDate - firstDate).Days / 7;
-                lblStageDays.Content = days;
-                lblStageWeeks.Content = weeks;
-            }
-            else
-            {
-                pnlStageLengthInfo.Visibility = Visibility.Collapsed;
+                    pnlStageLengthInfo.Visibility = Visibility.Visible;
+                //    var keys = new List<DateTime>();
+                //    foreach (var entry in ProjectData.Entries)
+                //    {
+                //        if (entry.Value.State == stage)
+                //        {
+                //            cmbEntries.Items.Add(entry.Key);
+                //            keys.Add(entry.Key);
+                //        }
+                //        else if (entry.Value.State == nextStage)
+                //        {
+                //            keys.Add(entry.Key);
+                //            break;
+                //        }
+                //    }
+                //    var firstDate = keys.Min();
+                //    var lastDate = keys.Max();
+                //    var days = (lastDate - firstDate).Days;
+                //    var weeks = (lastDate - firstDate).Days / 7;
+                    //lblStageDays.Content = days;
+                    //lblStageWeeks.Content = weeks;
+                var lastDate = ProjectData.Entries.Where(w => w.Value.State == stage).Select(s => s.Key).Last();
+                var daysString = GetDaysAndWeeksInStage(lastDate, stage);
+                lblDaysAndWeeks.Content = daysString;
+                //}
+                //else
+                //{
+                //    pnlStageLengthInfo.Visibility = Visibility.Collapsed;
+                //}
             }
             
         }
@@ -799,6 +902,29 @@ namespace GrowJo
             {
                 base.OnClosing(e);
             }
+        }
+
+        private void chkSameAsLastTime_Checked(object sender, RoutedEventArgs e)
+        {
+            if (chkSameAsLastTime.IsChecked == true)
+            {
+                btnAddNutrients.IsEnabled = ValidateNutrients();
+            }
+        }
+
+        private void txtBreeder_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+        }
+
+        private void txtCross1_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+        }
+
+        private void txtCross2_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
         }
     }
 }

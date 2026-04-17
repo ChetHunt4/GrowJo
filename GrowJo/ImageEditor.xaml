@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="ImageEditor" Height="Auto" Width="Auto" SizeToContent="WidthAndHeight">
     <StackPanel>
-        <Image MaxWidth="1000" MaxHeight="1000" x:Name="imgToEdit" MouseMove="imgToEdit_MouseMove" MouseDown="imgToEdit_MouseDown" MouseUp="imgToEdit_MouseUp" Stretch="None" />
+        <Image MaxWidth="1000" MaxHeight="1000" x:Name="imgToEdit" MouseMove="imgToEdit_MouseMove" MouseDown="imgToEdit_MouseDown" MouseUp="imgToEdit_MouseUp" Stretch="None" SizeChanged="imgToEdit_SizeChanged" />
         <StackPanel Orientation="Horizontal">
             <StackPanel Orientation="Vertical">
                 <Label>Rotate:</Label>

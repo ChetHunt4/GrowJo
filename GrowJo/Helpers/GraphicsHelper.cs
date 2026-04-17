@@ -23,25 +23,12 @@ namespace GrowJo.Helpers
 
         public static BitmapSource GetBitmapFromSKBitmap(SKBitmap bitmap)
         {
-            if (bitmap != null)
+            if (bitmap != null && bitmap.Width > 0 && bitmap.Height > 0)
             {
-                SKImageInfo imageInfo = new SKImageInfo(bitmap.Width, bitmap.Height);
-                using (SKSurface surface = SKSurface.Create(imageInfo))
-                {
-                    SKCanvas canvas = surface.Canvas;
-                    using (SKPaint paint = new SKPaint())
-                    {
-                        canvas.DrawBitmap(bitmap, 0, 0);
-                    }
-                    using (SKImage datImage = surface.Snapshot())
-                    using (SKData data = datImage.Encode(SKEncodedImageFormat.Png, 100))
-                    {
-                        byte[] imageBytes = data.ToArray();
-                        BitmapSource bmsource = BitmapImageFromByteArray(imageBytes);
-
-                        return bmsource;
-                    }
-                }
+                using SKImage image = SKImage.FromBitmap(bitmap);
+                using SKData data = image.Encode(SKEncodedImageFormat.Png, 100);
+                byte[] imageBytes = data.ToArray();
+                return BitmapImageFromByteArray(imageBytes);
             }
             return null!;
         }

@@ -32,6 +32,9 @@ namespace GrowJo
             EffectsDescription = source.EffectsDescription;
             Filename = source.Filename;
             YieldUnits = source.YieldUnits;
+            Breeder = source.Breeder;
+            Cross1 = source.Cross1;
+            Cross2 = source.Cross2;
         }
 
         public void LoadThumbnail()
@@ -63,6 +66,9 @@ namespace GrowJo
         public List<NutrientData>? Terpenes { get; set; }
         public string? EffectsDescription { get; set; }
         public string? Filename { get; set; }
+        public string? Breeder { get; set; }
+        public string? Cross1 { get; set; }
+        public string? Cross2 { get; set; }
     }
 
     public class DailyEntry

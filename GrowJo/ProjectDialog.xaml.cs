@@ -802,11 +802,14 @@ namespace GrowJo
                 //    var lastDate = keys.Max();
                 //    var days = (lastDate - firstDate).Days;
                 //    var weeks = (lastDate - firstDate).Days / 7;
-                    //lblStageDays.Content = days;
-                    //lblStageWeeks.Content = weeks;
-                var lastDate = ProjectData.Entries.Where(w => w.Value.State == stage).Select(s => s.Key).Last();
-                var daysString = GetDaysAndWeeksInStage(lastDate, stage);
-                lblDaysAndWeeks.Content = daysString;
+                //lblStageDays.Content = days;
+                //lblStageWeeks.Content = weeks;
+                var lastDate = ProjectData.Entries.Where(w => w.Value.State == stage).Select(s => s.Key).LastOrDefault();
+                if (lastDate != default(DateTime))
+                {
+                    var daysString = GetDaysAndWeeksInStage(lastDate, stage);
+                    lblDaysAndWeeks.Content = daysString;
+                }
                 //}
                 //else
                 //{

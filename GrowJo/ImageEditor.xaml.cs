@@ -1,8 +1,13 @@
 ﻿using GrowJo.Helpers;
+using GrowJo.Utilities;
+using Microsoft.Graph.Models;
+using Microsoft.Win32;
 using SkiaSharp;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using static SkiaSharp.SKImageFilter;
 
 namespace GrowJo
 {
@@ -13,17 +18,20 @@ namespace GrowJo
     {
         private string Filename { get; set; }
         private SKBitmap? OriginalBitmapToEdit { get; set; }
-        private SKBitmap? ResizedEditBitmap { get; set; }
-        private CroppingRectangle? CropRectangle { get; set; }
-        private bool CropMode { get; set; }
+        //private SKBitmap? ResizedEditBitmap { get; set; }
+        //private CroppingRectangle? CropRectangle { get; set; }
+        //private bool CropMode { get; set; }
         private bool MouseLeftDown { get; set; }
-        private int CropX { get; set; }
-        private int CropY { get; set; }
-        private int CropWidth { get; set; }
-        private int CropHeight { get; set; }
-        private bool StartedCrop { get; set; }
+        //private int CropX { get; set; }
+        //private int CropY { get; set; }
+        //private int CropWidth { get; set; }
+        //private int CropHeight { get; set; }
+        //private bool StartedCrop { get; set; }
+        //private int Angle { get; set; }
 
-        private List<IImageCmd> SaveCommands { get; set; } = new List<IImageCmd>();
+        private ImageEditState ImageEditState { get; set; }
+
+        //private List<IImageCmd> SaveCommands { get; set; } = new List<IImageCmd>();
 
         SKPaint cornerStroke = new SKPaint
         {
@@ -43,65 +51,64 @@ namespace GrowJo
         public ImageEditor(string filename)
         {
             InitializeComponent();
+            ImageEditState = new ImageEditState();
             Filename = filename;
             if (File.Exists(filename))
             {
                 OriginalBitmapToEdit = GraphicsHelper.LoadBitmapFromFile(filename);
+                ImageEditState.OriginalImage = OriginalBitmapToEdit;
+
                 if (OriginalBitmapToEdit != null)
                 {
-                    if (OriginalBitmapToEdit.Height > imgToEdit.MaxHeight)
-                    {
-                        float aspectWidth = (float)imgToEdit.MaxHeight / OriginalBitmapToEdit.Height;
-                        ResizedEditBitmap = OriginalBitmapToEdit.Resize(new SKImageInfo((int)(OriginalBitmapToEdit.Width * aspectWidth), (int)imgToEdit.MaxHeight), SKFilterQuality.None);
-                    }
-                    else
-                    {
-                        //don't need to resize
-                        ResizedEditBitmap = OriginalBitmapToEdit;
-                    }
-                }
-                        imgToEdit.Source = GraphicsHelper.GetBitmapFromSKBitmap(ResizedEditBitmap!);
-            }
-        }
+                    ImageEditState.ProxyImage = ImageEditState.CreateProxy(ImageEditState.OriginalImage, (int)Math.Max(Math.Max(imgToEdit.MaxWidth, imgToEdit.MaxHeight), 1000));
 
+                }
+            }
+            var source = ImageEditState.Render();
+            imgToEdit.Source = source;
+            imgToEdit.Width = source.PixelWidth;
+            imgToEdit.Height = source.PixelHeight;
+
+        }
 
         private void btnRotateLeft_Click(object sender, RoutedEventArgs e)
         {
-            ResizedEditBitmap = GraphicsHelper.Rotate(ResizedEditBitmap!, -90);
-            imgToEdit.Source = GraphicsHelper.GetBitmapFromSKBitmap(ResizedEditBitmap);
-            SaveCommands.Add(new ImageCmdRotate(-90));
+            ImageEditState.Angle -= 90f;
+            ImageEditState.Angle %= 360;
+            var source = ImageEditState.Render();
+            imgToEdit.Source = source;
+            imgToEdit.Width = source.PixelWidth;
+            imgToEdit.Height = source.PixelHeight;
         }
 
         private void btnRotateRight_Click(object sender, RoutedEventArgs e)
         {
-            ResizedEditBitmap = GraphicsHelper.Rotate(ResizedEditBitmap!, 90);
-            imgToEdit.Source = GraphicsHelper.GetBitmapFromSKBitmap(ResizedEditBitmap);
-            SaveCommands.Add(new ImageCmdRotate(90));
+            ImageEditState.Angle += 90f;
+            ImageEditState.Angle %= 360;
+
+            var source = ImageEditState.Render();
+            imgToEdit.Source = source;
+            imgToEdit.Width = source.PixelWidth;
+            imgToEdit.Height = source.PixelHeight;
         }
 
         private void btnCrop_Click(object sender, RoutedEventArgs e)
         {
-            CropMode = btnCrop.IsChecked.HasValue && btnCrop.IsChecked.Value;
-            if (!CropMode && StartedCrop)
+            ImageEditState.IsCropping = btnCrop.IsChecked.HasValue && btnCrop.IsChecked.Value;
+            if (!ImageEditState.IsCropping)
             {
-                StartedCrop = false;
-                SKRect rect = new SKRect(CropX, CropY, CropWidth, CropHeight);
-                SKImageInfo imageInfo = new SKImageInfo((int)rect!.Width, (int)rect.Height);
-                using (SKSurface surface = SKSurface.Create(imageInfo))
-                {
-                    SKCanvas canvas = surface.Canvas;
-                    SKRect SourceRect = rect;
-                    SKRect DestRect = new SKRect(0, 0, rect.Width, rect.Height);
-                    canvas.DrawBitmap(ResizedEditBitmap, SourceRect, DestRect);
-                    using (SKImage datImage = surface.Snapshot())
-                    using (SKData data = datImage.Encode(SKEncodedImageFormat.Png, 100))
-                    {
-                        ResizedEditBitmap = SKBitmap.Decode(data);
-                        SaveCommands.Add(new ImageCmdCrop(rect));
-                        imgToEdit.Source = GraphicsHelper.GetBitmapFromSKBitmap(ResizedEditBitmap);
-                    }
-                }
+                ImageEditState.CommitCrop();
+                var rendered = ImageEditState.Render();
+                imgToEdit.Source = rendered;
+                imgToEdit.Width = rendered.PixelWidth;
+                imgToEdit.Height = rendered.PixelHeight;
             }
+            else
+            {
+                //initialize crop rect
+                ImageEditState.InitCropRect();
+            }
+            imgToEdit.Source = ImageEditState.Render();
         }
 
         private void btnResize_Click(object sender, RoutedEventArgs e)
@@ -111,77 +118,140 @@ namespace GrowJo
 
         private void imgToEdit_MouseMove(object sender, MouseEventArgs e)
         {
-            if (MouseLeftDown)
+            if (ImageEditState.CurrentDrag == DragMode.None)
             {
-                if (CropMode)
-                {
-                    StartedCrop = true;
-                    Point p = Mouse.GetPosition(imgToEdit);
-                    CropWidth = (int)(CropX + p.X);
-                    CropHeight = (int)(CropY + p.Y);
-                    if(CropWidth < 0)
-                    {
-                        var temp = CropX;
-                        CropX -= CropWidth;
-                        CropWidth = temp;
-                    }
-                    if (CropHeight < 0)
-                    {
-                        var temp = CropY;
-                        CropY -= CropHeight;
-                        CropHeight = temp;
-                    }
-                    const int CORNER = 50;
-                    CropRectangle = new CroppingRectangle(new SKRect(CropX, CropY, CropWidth, CropHeight));
-                    SKImageInfo imageInfo = new SKImageInfo(ResizedEditBitmap!.Width, ResizedEditBitmap.Height);
-                    using (SKSurface surface = SKSurface.Create(imageInfo))
-                    {
-                        SKCanvas canvas = surface.Canvas;
-                        using (SKPaint paint = new SKPaint())
-                        {
-                            canvas.DrawBitmap(ResizedEditBitmap, 0, 0);
-
-                            using (SKPath path = new SKPath())
-                            {
-                                path.MoveTo(CropRectangle.Rect.Left, CropRectangle.Rect.Top + CORNER);
-                                path.LineTo(CropRectangle.Rect.Left, CropRectangle.Rect.Top);
-                                path.LineTo(CropRectangle.Rect.Left + CORNER, CropRectangle.Rect.Top);
-
-                                path.MoveTo(CropRectangle.Rect.Right - CORNER, CropRectangle.Rect.Top);
-                                path.LineTo(CropRectangle.Rect.Right, CropRectangle.Rect.Top);
-                                path.LineTo(CropRectangle.Rect.Right, CropRectangle.Rect.Top + CORNER);
-
-                                path.MoveTo(CropRectangle.Rect.Right, CropRectangle.Rect.Bottom - CORNER);
-                                path.LineTo(CropRectangle.Rect.Right, CropRectangle.Rect.Bottom);
-                                path.LineTo(CropRectangle.Rect.Right - CORNER, CropRectangle.Rect.Bottom);
-
-                                path.MoveTo(CropRectangle.Rect.Left + CORNER, CropRectangle.Rect.Bottom);
-                                path.LineTo(CropRectangle.Rect.Left, CropRectangle.Rect.Bottom);
-                                path.LineTo(CropRectangle.Rect.Left, CropRectangle.Rect.Bottom - CORNER);
-
-                                canvas.DrawPath(path, cornerStroke);
-                            }
-                        }
-                        SKImage image = surface.Snapshot();
-                        //ResizedEditBitmap = SKBitmap.FromImage(image);
-                        imgToEdit.Source = GraphicsHelper.GetBitmapFromSKBitmap(SKBitmap.FromImage(image));
-                    }
-                }
+                return;
             }
+            var mousePos = e.GetPosition(imgToEdit);
+            var bounds = ImageEditState.CurrentTransform.MapRect(new SKRect(0, 0, ImageEditState!.ProxyImage!.Width, ImageEditState!.ProxyImage.Height)).Standardized;
+            float scaleX = bounds.Width / (float)imgToEdit.ActualWidth;
+            float scaleY = bounds.Height / (float)imgToEdit.ActualHeight;
+
+            var bmpPt = new SKPoint((float)mousePos.X * scaleX, (float)mousePos.Y * scaleY);
+            bmpPt.Offset(bounds.Left, bounds.Top);
+
+            var imgPt = ImageEditState.InverseTransform.MapPoint(bmpPt);
+
+            var delta = new SKPoint(
+                imgPt.X - ImageEditState.LastMousePos.X,
+                imgPt.Y - ImageEditState.LastMousePos.Y);
+
+            switch (ImageEditState.CurrentDrag)
+            {
+                case DragMode.Move:
+                    ImageEditState.CropRect!.Value.Offset(delta);
+                    break;
+
+                case DragMode.Left:
+                    ImageEditState.CropRect = new SKRect
+                    {
+                        Bottom = ImageEditState.CropRect!.Value.Bottom,
+                        Left = ImageEditState.CropRect.Value.Left + delta.X,
+                        Right = ImageEditState.CropRect.Value.Right,
+                        Top = ImageEditState.CropRect.Value.Top
+                    };
+                    break;
+
+                case DragMode.Right:
+                    ImageEditState.CropRect = new SKRect
+                    {
+                        Bottom = ImageEditState.CropRect!.Value.Bottom,
+                        Left = ImageEditState.CropRect.Value.Left,
+                        Right = ImageEditState.CropRect.Value.Right + delta.X,
+                        Top = ImageEditState.CropRect.Value.Top
+                    };
+                    break;
+
+                case DragMode.Top:
+                    ImageEditState.CropRect = new SKRect
+                    {
+                        Bottom = ImageEditState.CropRect!.Value.Bottom,
+                        Left = ImageEditState.CropRect.Value.Left,
+                        Right = ImageEditState.CropRect.Value.Right,
+                        Top = ImageEditState.CropRect.Value.Top + delta.Y
+                    };
+                    break;
+
+                case DragMode.Bottom:
+                    ImageEditState.CropRect = new SKRect
+                    {
+                        Bottom = ImageEditState.CropRect!.Value.Bottom + delta.Y,
+                        Left = ImageEditState.CropRect.Value.Left,
+                        Right = ImageEditState.CropRect.Value.Right,
+                        Top = ImageEditState.CropRect.Value.Top
+                    };
+                    break;
+
+                case DragMode.TopLeft:
+                    ImageEditState.CropRect = new SKRect
+                    {
+                        Bottom = ImageEditState.CropRect!.Value.Bottom,
+                        Left = ImageEditState.CropRect.Value.Left + delta.X,
+                        Right = ImageEditState.CropRect.Value.Right,
+                        Top = ImageEditState.CropRect.Value.Top + delta.Y
+                    };
+                    break;
+
+                case DragMode.TopRight:
+                    ImageEditState.CropRect = new SKRect
+                    {
+                        Bottom = ImageEditState.CropRect!.Value.Bottom,
+                        Left = ImageEditState.CropRect.Value.Left,
+                        Right = ImageEditState.CropRect.Value.Right + delta.X,
+                        Top = ImageEditState.CropRect.Value.Top + delta.Y
+                    };
+                    break;
+
+                case DragMode.BottomLeft:
+                    ImageEditState.CropRect = new SKRect
+                    {
+                        Bottom = ImageEditState.CropRect!.Value.Bottom + delta.Y,
+                        Left = ImageEditState.CropRect.Value.Left + delta.X,
+                        Right = ImageEditState.CropRect.Value.Right,
+                        Top = ImageEditState.CropRect.Value.Top
+                    };
+                    break;
+
+                case DragMode.BottomRight:
+                    ImageEditState.CropRect = new SKRect
+                    {
+                        Bottom = ImageEditState.CropRect!.Value.Bottom + delta.Y,
+                        Left = ImageEditState.CropRect.Value.Left,
+                        Right = ImageEditState.CropRect.Value.Right + delta.X,
+                        Top = ImageEditState.CropRect.Value.Top
+                    };
+                    break;
+
+            }
+
+            ImageEditState.LastMousePos = imgPt;
+            imgToEdit.Source = ImageEditState.Render();
         }
 
         private void imgToEdit_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            Point p = Mouse.GetPosition(imgToEdit);
-            MouseLeftDown = true;
-            CropX = (int)p.X;
-            CropY = (int)p.Y;
+            if (ImageEditState.IsCropping)
+            {
+                var mousePos = e.GetPosition(imgToEdit);
+                var bounds = ImageEditState.CurrentTransform.MapRect(new SKRect(0, 0, ImageEditState.ProxyImage!.Width, ImageEditState.ProxyImage.Height)).Standardized;
+
+                float scaleX = bounds.Width / (float)imgToEdit.ActualWidth;
+                float scaleY = bounds.Height / (float)imgToEdit.ActualHeight;
+                var bmpPt = new SKPoint((float)mousePos.X * scaleX, (float)mousePos.Y * scaleY);
+                bmpPt.Offset(bounds.Left, bounds.Top);
+                var imgPt = ImageEditState.InverseTransform.MapPoint(bmpPt);
+                ImageEditState.CurrentDrag = ImageEditState.HitTest(imgPt);
+                ImageEditState.LastMousePos = imgPt;
+            }
         }
 
         private void imgToEdit_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            MouseLeftDown = false;
+            ImageEditState.CurrentDrag = DragMode.None;
+            ImageEditState.NormalizeCropRect();
         }
+
+  
 
         private void txtImageWidth_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
@@ -220,13 +290,40 @@ namespace GrowJo
                     break;
             }
             //for now save resized.
-            GraphicsHelper.SaveImageToFile(Filename, ResizedEditBitmap!, format);
+            GraphicsHelper.SaveImageToFile(Filename, ImageEditState.OriginalImage!, format);
 
         }
 
         private void btnSaveImageCopy_Click(object sender, RoutedEventArgs e)
         {
+            var saveDialog = new SaveFileDialog();
+            saveDialog.Filter = "PNG Files(*.PNG)| *.PNG;| JPG Files(*.JPG)| *.JPG| All files(*.*) | *.*";
+            saveDialog.DefaultExt = ".png";
+            var saveResult = saveDialog.ShowDialog();
+            if (saveResult == true)
+            {
+                var extension = Path.GetExtension(saveDialog.FileName);
+                SKEncodedImageFormat format = SKEncodedImageFormat.Png;
+                switch (extension.ToUpper())
+                {
+                    case ".JPG":
+                    case ".JPEG":
+                        format = SKEncodedImageFormat.Jpeg;
+                        break;
+                    case ".PNG":
+                        format = SKEncodedImageFormat.Png;
+                        break;
+                }
+                GraphicsHelper.SaveImageToFile(saveDialog.FileName, ImageEditState.OriginalImage!, format);
+            }
+        }
 
+        private void imgToEdit_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (imgToEdit.ActualWidth > 0 && imgToEdit.ActualHeight > 0)
+            {
+                ImageEditState.Render();
+            }
         }
     }
 }
